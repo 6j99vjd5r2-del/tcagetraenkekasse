@@ -124,20 +124,35 @@ function updateSessionInfo() {
 }
 function loginMember() {
   const code = $("memberCode").value.trim();
-  if (!/^\d{4}$/.test(code)) return toast("Bitte einen 4-stelligen Code eingeben.");
+
+  if (!/^\d{4}$/.test(code)) {
+    toast("Bitte einen 4-stelligen Code eingeben.");
+    return;
+  }
+
   const member = data.members.find(m => m.code === code && m.active);
+
   if (!member) {
     $("memberCode").value = "";
-    return toast("Code nicht gefunden oder Mitglied inaktiv.");
+    toast("Code nicht gefunden oder Mitglied inaktiv.");
+    return;
   }
+
   activeMember = member;
+
+  // Code sofort vollständig aus dem sichtbaren Eingabefeld entfernen.
   $("memberCode").value = "";
+  $("memberCode").blur();
+
+  // Immer exakt einen Seitenbereich und den Buchungsbereich anzeigen.
   $("loginPanel").hidden = true;
   $("memberPanel").hidden = false;
   $("bookingPanel").hidden = false;
+
   $("memberName").textContent = member.name;
   $("memberId").textContent = member.id;
   $("welcomeText").textContent = `Willkommen ${member.name}!`;
+
   renderDrinks();
   renderRecent();
   updateMemberMonthTotal();
@@ -146,11 +161,24 @@ function loginMember() {
 function logoutMember(auto=false) {
   stopInactivityTimer();
   activeMember = null;
+
+  // Personenbezogene Inhalte vor dem Umschalten vollständig leeren.
+  $("memberName").textContent = "";
+  $("memberId").textContent = "";
+  $("welcomeText").textContent = "Willkommen!";
+  $("memberMonthTotal").textContent = euro(0);
+  $("drinkGrid").innerHTML = "";
+  $("recentBookings").innerHTML = "";
+  $("sessionInfo").textContent = `${INACTIVITY_SECONDS} Sekunden`;
+
+  // Ausschließlich die neutrale Anmeldemaske anzeigen.
   $("memberPanel").hidden = true;
   $("bookingPanel").hidden = true;
   $("loginPanel").hidden = false;
+
   $("memberCode").value = "";
   $("memberCode").focus();
+
   if (auto) toast("Automatisch abgemeldet.");
 }
 
@@ -530,4 +558,18 @@ document.querySelectorAll(".tab").forEach(btn=>btn.addEventListener("click",()=>
 }));
 function refreshAll(){renderDrinks();renderRecent();renderAdmin();if(activeMember)updateMemberMonthTotal();}
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(console.error));
-$("reportMonth").value=currentMonthValue();refreshAll();$("memberCode").focus();
+$("reportMonth").value = currentMonthValue();
+refreshAll();
+
+// Beim Laden niemals Daten eines vorherigen Nutzers anzeigen.
+activeMember = null;
+$("memberPanel").hidden = true;
+$("bookingPanel").hidden = true;
+$("loginPanel").hidden = false;
+$("memberName").textContent = "";
+$("memberId").textContent = "";
+$("memberMonthTotal").textContent = euro(0);
+$("drinkGrid").innerHTML = "";
+$("recentBookings").innerHTML = "";
+$("memberCode").value = "";
+$("memberCode").focus();
