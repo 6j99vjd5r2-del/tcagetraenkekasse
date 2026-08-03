@@ -1,6 +1,6 @@
 
 const STORAGE_KEY = "getraenkekasse2_data";
-const INACTIVITY_SECONDS = 10;
+const INACTIVITY_SECONDS = 20;
 
 const defaultData = {
   members: [
@@ -22,6 +22,7 @@ const defaultData = {
 
 let data = loadData();
 let activeMember = null;
+let currentSessionBookingIds = [];
 let inactivitySecondsLeft = INACTIVITY_SECONDS;
 let inactivityInterval = null;
 const $ = id => document.getElementById(id);
@@ -139,12 +140,11 @@ function loginMember() {
   }
 
   activeMember = member;
+  currentSessionBookingIds = [];
 
-  // Code sofort vollständig aus dem sichtbaren Eingabefeld entfernen.
   $("memberCode").value = "";
   $("memberCode").blur();
 
-  // Immer exakt einen Seitenbereich und den Buchungsbereich anzeigen.
   $("loginPanel").hidden = true;
   $("memberPanel").hidden = false;
   $("bookingPanel").hidden = false;
@@ -156,13 +156,14 @@ function loginMember() {
   renderDrinks();
   renderRecent();
   updateMemberMonthTotal();
+  updateSessionDeleteButton();
   startInactivityTimer();
 }
 function logoutMember(auto=false) {
   stopInactivityTimer();
   activeMember = null;
+  currentSessionBookingIds = [];
 
-  // Personenbezogene Inhalte vor dem Umschalten vollständig leeren.
   $("memberName").textContent = "";
   $("memberId").textContent = "";
   $("welcomeText").textContent = "Willkommen!";
@@ -171,13 +172,13 @@ function logoutMember(auto=false) {
   $("recentBookings").innerHTML = "";
   $("sessionInfo").textContent = `${INACTIVITY_SECONDS} Sekunden`;
 
-  // Ausschließlich die neutrale Anmeldemaske anzeigen.
   $("memberPanel").hidden = true;
   $("bookingPanel").hidden = true;
   $("loginPanel").hidden = false;
 
   $("memberCode").value = "";
   $("memberCode").focus();
+  updateSessionDeleteButton();
 
   if (auto) toast("Automatisch abgemeldet.");
 }
@@ -210,9 +211,12 @@ function renderDrinks() {
   document.querySelectorAll("[data-drink]").forEach(btn=>btn.addEventListener("click",()=>{
     if(!activeMember) return toast("Bitte zuerst anmelden.");
     const drink=data.drinks.find(d=>d.id===btn.dataset.drink);
-    data.bookings.push({id:uid("B"),memberId:activeMember.id,member:activeMember.name,memberCode:activeMember.code,drinkId:drink.id,drink:drink.name,price:Number(drink.price),createdAt:new Date().toISOString()});
+    const booking = {id:uid("B"),memberId:activeMember.id,member:activeMember.name,memberCode:activeMember.code,drinkId:drink.id,drink:drink.name,price:Number(drink.price),createdAt:new Date().toISOString()};
+    data.bookings.push(booking);
+    currentSessionBookingIds.push(booking.id);
     saveData();
     renderRecent();
+    updateSessionDeleteButton();
     renderReports();
     updateMemberMonthTotal();
     toast(`${drink.name} gebucht`);
@@ -224,14 +228,115 @@ function renderRecent() {
     $("recentBookings").innerHTML = "";
     return;
   }
+
   const recent = data.bookings
     .filter(b => (b.memberId && b.memberId === activeMember.id) || (!b.memberId && b.member === activeMember.name))
-    .slice().reverse().slice(0,5);
+    .slice()
+    .reverse()
+    .slice(0, 8);
+
   $("recentBookings").innerHTML = recent.length ? `
     <table class="recent-table">
-      <thead><tr><th>Datum / Uhrzeit</th><th>Getränk</th><th>Preis</th></tr></thead>
-      <tbody>${recent.map(b=>`<tr><td>${dateTime(b.createdAt)}</td><td>${escapeHtml(b.drink)}</td><td>${euro(b.price)}</td></tr>`).join("")}</tbody>
+      <thead>
+        <tr><th>Datum / Uhrzeit</th><th>Getränk</th><th>Preis</th><th></th></tr>
+      </thead>
+      <tbody>
+        ${recent.map(b => {
+          const sessionBooking = currentSessionBookingIds.includes(b.id);
+          return `
+            <tr>
+              <td>${dateTime(b.createdAt)}${sessionBooking ? '<span class="session-badge">Aktuelle Sitzung</span>' : ''}</td>
+              <td>${escapeHtml(b.drink)}</td>
+              <td>${euro(b.price)}</td>
+              <td>
+                ${sessionBooking
+                  ? `<button type="button" class="booking-delete-button" data-delete-session-booking="${escapeHtml(b.id)}">Löschen</button>`
+                  : ''}
+              </td>
+            </tr>`;
+        }).join("")}
+      </tbody>
     </table>` : `<p class="hint" style="padding:16px">Noch keine Buchungen vorhanden.</p>`;
+
+  document.querySelectorAll("[data-delete-session-booking]").forEach(button => {
+    button.addEventListener("click", () => {
+      deleteSessionBooking(button.dataset.deleteSessionBooking);
+    });
+  });
+
+  updateSessionDeleteButton();
+}
+
+function updateSessionDeleteButton() {
+  const button = $("deleteLastSessionBookingBtn");
+  if (!button) return;
+
+  const existingSessionIds = currentSessionBookingIds.filter(id =>
+    data.bookings.some(booking => booking.id === id)
+  );
+
+  currentSessionBookingIds = existingSessionIds;
+  button.disabled = !activeMember || currentSessionBookingIds.length === 0;
+}
+
+function deleteSessionBooking(bookingId) {
+  if (!activeMember || !currentSessionBookingIds.includes(bookingId)) {
+    toast("Diese Buchung kann nicht gelöscht werden.");
+    return;
+  }
+
+  const booking = data.bookings.find(b => b.id === bookingId);
+  if (!booking) {
+    currentSessionBookingIds = currentSessionBookingIds.filter(id => id !== bookingId);
+    updateSessionDeleteButton();
+    return;
+  }
+
+  if (!confirm(`${booking.drink} für ${euro(booking.price)} wirklich löschen?`)) {
+    resetInactivityTimer();
+    return;
+  }
+
+  data.bookings = data.bookings.filter(b => b.id !== bookingId);
+  currentSessionBookingIds = currentSessionBookingIds.filter(id => id !== bookingId);
+
+  saveData();
+  renderRecent();
+  renderReports();
+  updateMemberMonthTotal();
+  updateSessionDeleteButton();
+  resetInactivityTimer();
+  toast("Buchung gelöscht.");
+}
+
+function deleteLastSessionBooking() {
+  if (!activeMember || currentSessionBookingIds.length === 0) {
+    toast("Keine Sitzungsbuchung zum Löschen vorhanden.");
+    return;
+  }
+
+  const lastExistingId = [...currentSessionBookingIds]
+    .reverse()
+    .find(id => data.bookings.some(booking => booking.id === id));
+
+  if (!lastExistingId) {
+    currentSessionBookingIds = [];
+    updateSessionDeleteButton();
+    toast("Keine Sitzungsbuchung zum Löschen vorhanden.");
+    return;
+  }
+
+  deleteSessionBooking(lastExistingId);
+}
+
+function updateMemberMonthTotal() {
+  if (!activeMember) return;
+  const month = currentMonthValue();
+  const total = data.bookings
+    .filter(b => b.createdAt.slice(0,7) === month)
+    .filter(b => (b.memberId && b.memberId === activeMember.id) || (!b.memberId && b.member === activeMember.name))
+    .reduce((sum,b) => sum + Number(b.price), 0);
+  $("memberMonthTotal").textContent = euro(total);
 }
 
 function updateMemberMonthTotal() {
@@ -521,6 +626,7 @@ async function restoreBackup() {
 $("memberLoginBtn").addEventListener("click",loginMember);
 $("memberCode").addEventListener("keydown",e=>{if(e.key==="Enter")loginMember();});
 $("logoutBtn").addEventListener("click",()=>logoutMember(false));
+$("deleteLastSessionBookingBtn").addEventListener("click", deleteLastSessionBooking);
 ["pointerdown","keydown","touchstart"].forEach(name=>document.addEventListener(name,()=>{if(activeMember)resetInactivityTimer();},{passive:true}));
 $("adminBtn").addEventListener("click",()=>{$("pinArea").hidden=false;$("adminArea").hidden=true;$("pinInput").value="";$("adminDialog").showModal();});
 $("pinSubmit").addEventListener("click",()=>{if($("pinInput").value===data.adminPin){$("pinArea").hidden=true;$("adminArea").hidden=false;renderAdmin();}else toast("PIN ist nicht korrekt.");});
@@ -571,5 +677,7 @@ $("memberId").textContent = "";
 $("memberMonthTotal").textContent = euro(0);
 $("drinkGrid").innerHTML = "";
 $("recentBookings").innerHTML = "";
+currentSessionBookingIds = [];
+updateSessionDeleteButton();
 $("memberCode").value = "";
 $("memberCode").focus();

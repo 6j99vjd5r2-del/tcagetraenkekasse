@@ -1,27 +1,30 @@
-GETRÄNKEKASSE 4.0.1 – DARSTELLUNGS- UND DATENSCHUTZFIX
+GETRÄNKEKASSE 5.0
 
-Behobene Fehler
-- Login- und Mitgliederbereich wurden gleichzeitig angezeigt.
-- Der Buchungsbereich rutschte dadurch in eine schmale linke Spalte.
-- Nach der Abmeldung blieben Name, Mitglieder-ID und Monatsbetrag sichtbar.
+NEU
+- Automatische Abmeldung nach 20 Sekunden Inaktivität.
+- Mehrere Getränke können weiterhin in einer Sitzung gebucht werden.
+- Buchungen der aktuell laufenden Sitzung können wieder gelöscht werden.
+- Jede löschbare Buchung ist mit „Aktuelle Sitzung“ gekennzeichnet.
+- Einzelne Sitzungsbuchungen können direkt in der Liste gelöscht werden.
+- Zusätzlich gibt es „Letzte Sitzungsbuchung löschen“.
+- Buchungen aus früheren Sitzungen können Mitglieder nicht löschen.
+- Nach der Abmeldung verfällt die Löschberechtigung für diese Sitzung.
+- Monatsbetrag und Auswertungen werden nach einem Storno sofort aktualisiert.
 
-Technische Korrekturen
-- Das HTML-Attribut hidden wird nun immer mit display:none umgesetzt.
-- Login- und Mitgliederbereich verwenden denselben festen Grid-Bereich.
-- Der Buchungsbereich besitzt einen festen, vollständigen Inhaltsbereich.
-- Bei Abmeldung werden alle personenbezogenen Felder, Buchungen und Summen geleert.
-- Auch beim erneuten Laden startet die Anwendung garantiert im neutralen Abmeldezustand.
-- Offline-Cache auf Version v7 erhöht.
+Alle Funktionen aus Version 4.0.1 und Version 3.0 bleiben erhalten:
+- Offline-Betrieb
+- Mitglieder- und Getränkeimport
+- Bearbeitung im Adminbereich
+- Excel-Monatsabschluss
+- CSV-Export
+- Datensicherung und Wiederherstellung
 
-Update über GitHub Pages
-1. ZIP-Datei entpacken.
-2. Alle Dateien im bestehenden Repository ersetzen.
-3. Commit changes ausführen.
-4. Warten, bis GitHub Pages aktualisiert wurde.
-5. Auf dem iPad die Adresse einmal online in Safari öffnen und neu laden.
-6. Falls die alte Darstellung bleibt:
-   - App vom Home-Bildschirm entfernen.
-   - Safari öffnen und die Seite neu laden.
-   - Erneut „Zum Home-Bildschirm“ hinzufügen.
+UPDATE
+1. ZIP entpacken.
+2. Alle Dateien im GitHub-Repository ersetzen.
+3. Commit changes.
+4. Seite auf dem iPad einmal online neu laden.
+5. Falls noch die alte Version erscheint, App vom Home-Bildschirm entfernen,
+   in Safari neu öffnen und wieder zum Home-Bildschirm hinzufügen.
 
-Bestehende lokale Daten bleiben erhalten, solange die Websitedaten nicht gelöscht werden.
+Standard-Admin-PIN: 2468
