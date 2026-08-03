@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#173f2f" />
+  <title>Getränkekasse 2.0</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Getränkekasse 2.0</h1>
+      <p>Offline-Buchung für den Verein</p>
+    </div>
+    <button id="adminBtn" class="secondary">Admin</button>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>1. Mitglied auswählen</h2>
+      <input id="memberSearch" type="search" placeholder="Name suchen ..." autocomplete="off" />
+      <div id="memberGrid" class="grid members"></div>
+    </section>
+
+    <section class="card">
+      <h2>2. Getränk buchen</h2>
+      <div id="selectedMember" class="selected">Noch kein Mitglied ausgewählt</div>
+      <div id="drinkGrid" class="grid drinks"></div>
+    </section>
+
+    <section class="card">
+      <h2>Letzte Buchungen</h2>
+      <div id="recentBookings" class="recent"></div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <dialog id="adminDialog">
+    <form method="dialog" class="dialog-card">
+      <div class="dialog-head">
+        <h2>Administration</h2>
+        <button value="cancel" class="icon-btn" aria-label="Schließen">×</button>
+      </div>
+
+      <div id="pinArea">
+        <label for="pinInput">Admin-PIN</label>
+        <input id="pinInput" type="password" inputmode="numeric" maxlength="8" placeholder="PIN eingeben" />
+        <button type="button" id="pinSubmit">Anmelden</button>
+        <p class="hint">Standard-PIN: 2468</p>
+      </div>
+
+      <div id="adminArea" hidden>
+        <div class="tabs">
+          <button type="button" data-tab="members" class="tab active">Mitglieder</button>
+          <button type="button" data-tab="drinks" class="tab">Getränke</button>
+          <button type="button" data-tab="reports" class="tab">Auswertung</button>
+          <button type="button" data-tab="settings" class="tab">Einstellungen</button>
+        </div>
+
+        <section id="tab-members" class="tab-panel">
+          <div class="inline-form">
+            <input id="newMemberName" placeholder="Neues Mitglied" />
+            <button type="button" id="addMemberBtn">Hinzufügen</button>
+          </div>
+          <div id="adminMembers"></div>
+        </section>
+
+        <section id="tab-drinks" class="tab-panel" hidden>
+          <div class="inline-form three">
+            <input id="newDrinkName" placeholder="Getränk" />
+            <input id="newDrinkPrice" type="number" min="0" step="0.10" placeholder="Preis €" />
+            <button type="button" id="addDrinkBtn">Hinzufügen</button>
+          </div>
+          <div id="adminDrinks"></div>
+        </section>
+
+        <section id="tab-reports" class="tab-panel" hidden>
+          <div class="report-actions">
+            <button type="button" id="exportBtn">CSV exportieren</button>
+            <button type="button" id="clearBookingsBtn" class="danger">Alle Buchungen löschen</button>
+          </div>
+          <div id="summary"></div>
+          <div id="bookingTable"></div>
+        </section>
+
+        <section id="tab-settings" class="tab-panel" hidden>
+          <label for="newPin">Neue Admin-PIN</label>
+          <div class="inline-form">
+            <input id="newPin" type="password" inputmode="numeric" maxlength="8" placeholder="Neue PIN" />
+            <button type="button" id="savePinBtn">PIN speichern</button>
+          </div>
+          <p class="hint">Die Daten werden ausschließlich auf diesem Gerät gespeichert.</p>
+        </section>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
