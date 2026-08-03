@@ -2,7 +2,12 @@
 const STORAGE_KEY = "getraenkekasse2_data";
 
 const defaultData = {
-  members: ["Daniel", "Anna", "Max Mustermann", "Lisa Beispiel"],
+  members: [
+    { name: "Daniel", code: "1001" },
+    { name: "Anna", code: "1002" },
+    { name: "Max Mustermann", code: "1003" },
+    { name: "Lisa Beispiel", code: "1004" }
+  ],
   drinks: [
     { name: "Wasser", price: 1.50 },
     { name: "Spezi", price: 2.00 },
@@ -15,14 +20,28 @@ const defaultData = {
 };
 
 let data = loadData();
-let selectedMember = null;
+let activeMember = null;
+
+const INACTIVITY_SECONDS = 10;
+let inactivitySecondsLeft = INACTIVITY_SECONDS;
+let inactivityInterval = null;
 
 const $ = (id) => document.getElementById(id);
 
 function loadData() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : structuredClone(defaultData);
+    const loaded = saved ? JSON.parse(saved) : structuredClone(defaultData);
+
+    // Migration der ersten Version: Namen ohne Code werden in Mitgliederobjekte umgewandelt.
+    if (Array.isArray(loaded.members) && loaded.members.some(m => typeof m === "string")) {
+      loaded.members = loaded.members.map((member, index) =>
+        typeof member === "string"
+          ? { name: member, code: String(7000 + index).slice(-4) }
+          : member
+      );
+    }
+    return loaded;
   } catch {
     return structuredClone(defaultData);
   }
@@ -50,30 +69,83 @@ function toast(message) {
   setTimeout(() => el.classList.remove("show"), 1800);
 }
 
-function renderMembers(filter = "") {
-  const q = filter.trim().toLowerCase();
-  const members = data.members
-    .filter(m => m.toLowerCase().includes(q))
-    .sort((a, b) => a.localeCompare(b, "de"));
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, ch => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+  }[ch]));
+}
 
-  $("memberGrid").innerHTML = members.map(name => `
-    <button class="tile ${selectedMember === name ? "active" : ""}" data-member="${escapeHtml(name)}">
-      ${escapeHtml(name)}
-    </button>
-  `).join("");
+function startInactivityTimer() {
+  stopInactivityTimer();
+  inactivitySecondsLeft = INACTIVITY_SECONDS;
+  updateSessionInfo();
 
-  document.querySelectorAll("[data-member]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      selectedMember = btn.dataset.member;
-      $("selectedMember").textContent = `Ausgewählt: ${selectedMember}`;
-      renderMembers($("memberSearch").value);
-    });
-  });
+  inactivityInterval = setInterval(() => {
+    inactivitySecondsLeft -= 1;
+    updateSessionInfo();
+
+    if (inactivitySecondsLeft <= 0) {
+      logoutMember(true);
+    }
+  }, 1000);
+}
+
+function resetInactivityTimer() {
+  if (!activeMember) return;
+  inactivitySecondsLeft = INACTIVITY_SECONDS;
+  updateSessionInfo();
+}
+
+function stopInactivityTimer() {
+  if (inactivityInterval) {
+    clearInterval(inactivityInterval);
+    inactivityInterval = null;
+  }
+}
+
+function updateSessionInfo() {
+  const el = $("sessionInfo");
+  if (!el) return;
+  el.textContent = `Automatische Abmeldung in ${inactivitySecondsLeft} Sekunde${inactivitySecondsLeft === 1 ? "" : "n"}`;
+  el.classList.toggle("warning", inactivitySecondsLeft <= 3);
+}
+
+function loginMember() {
+  const code = $("memberCode").value.trim();
+  if (!/^\d{4}$/.test(code)) {
+    toast("Bitte einen 4-stelligen Code eingeben.");
+    return;
+  }
+
+  const member = data.members.find(m => m.code === code);
+  if (!member) {
+    $("memberCode").value = "";
+    toast("Code nicht gefunden.");
+    return;
+  }
+
+  activeMember = member;
+  $("memberCode").value = "";
+  $("loginCard").hidden = true;
+  $("bookingCard").hidden = false;
+  $("selectedMember").textContent = `Angemeldet: ${member.name}`;
+  renderDrinks();
+  startInactivityTimer();
+}
+
+function logoutMember(automatic = false) {
+  stopInactivityTimer();
+  activeMember = null;
+  $("bookingCard").hidden = true;
+  $("loginCard").hidden = false;
+  $("memberCode").value = "";
+  $("memberCode").focus();
+  if (automatic) toast("Automatisch abgemeldet.");
 }
 
 function renderDrinks() {
   $("drinkGrid").innerHTML = data.drinks
-    .sort((a, b) => a.name.localeCompare(b.name, "de"))
+    .slice().sort((a, b) => a.name.localeCompare(b.name, "de"))
     .map((drink, index) => `
       <button class="tile drink-tile" data-drink-index="${index}">
         ${escapeHtml(drink.name)}
@@ -81,23 +153,27 @@ function renderDrinks() {
       </button>
     `).join("");
 
+  const sortedDrinks = data.drinks.slice().sort((a, b) => a.name.localeCompare(b.name, "de"));
   document.querySelectorAll("[data-drink-index]").forEach(btn => {
     btn.addEventListener("click", () => {
-      if (!selectedMember) {
-        toast("Bitte zuerst ein Mitglied auswählen.");
+      if (!activeMember) {
+        toast("Bitte zuerst anmelden.");
         return;
       }
-      const drink = data.drinks[Number(btn.dataset.drinkIndex)];
+
+      const drink = sortedDrinks[Number(btn.dataset.drinkIndex)];
       data.bookings.push({
         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-        member: selectedMember,
+        member: activeMember.name,
+        memberCode: activeMember.code,
         drink: drink.name,
         price: Number(drink.price),
         createdAt: new Date().toISOString()
       });
       saveData();
       renderRecent();
-      toast(`${drink.name} für ${selectedMember} gebucht`);
+      toast(`${drink.name} für ${activeMember.name} gebucht`);
+      resetInactivityTimer();
     });
   });
 }
@@ -116,41 +192,37 @@ function renderRecent() {
 }
 
 function renderAdmin() {
-  $("adminMembers").innerHTML = data.members
-    .slice().sort((a, b) => a.localeCompare(b, "de"))
-    .map((name, index) => `
-      <div class="list-row">
-        <span>${escapeHtml(name)}</span>
-        <button type="button" class="small danger" data-remove-member="${index}">Löschen</button>
-      </div>
-    `).join("");
+  const sortedMembers = data.members.slice().sort((a, b) => a.name.localeCompare(b.name, "de"));
+  $("adminMembers").innerHTML = sortedMembers.map((member, index) => `
+    <div class="list-row">
+      <span>${escapeHtml(member.name)} · <span class="member-code">${escapeHtml(member.code)}</span></span>
+      <button type="button" class="small danger" data-remove-member="${index}">Löschen</button>
+    </div>
+  `).join("");
 
   document.querySelectorAll("[data-remove-member]").forEach(btn => {
     btn.addEventListener("click", () => {
-      const sorted = data.members.slice().sort((a,b)=>a.localeCompare(b,"de"));
-      const name = sorted[Number(btn.dataset.removeMember)];
-      if (confirm(`${name} wirklich löschen?`)) {
-        data.members = data.members.filter(m => m !== name);
-        if (selectedMember === name) selectedMember = null;
+      const member = sortedMembers[Number(btn.dataset.removeMember)];
+      if (confirm(`${member.name} wirklich löschen?`)) {
+        data.members = data.members.filter(m => !(m.name === member.name && m.code === member.code));
+        if (activeMember?.code === member.code) logoutMember();
         saveData();
         refreshAll();
       }
     });
   });
 
-  $("adminDrinks").innerHTML = data.drinks
-    .slice().sort((a, b) => a.name.localeCompare(b.name, "de"))
-    .map((drink, index) => `
-      <div class="list-row">
-        <span>${escapeHtml(drink.name)} · ${euro(drink.price)}</span>
-        <button type="button" class="small danger" data-remove-drink="${index}">Löschen</button>
-      </div>
-    `).join("");
+  const sortedDrinks = data.drinks.slice().sort((a, b) => a.name.localeCompare(b.name, "de"));
+  $("adminDrinks").innerHTML = sortedDrinks.map((drink, index) => `
+    <div class="list-row">
+      <span>${escapeHtml(drink.name)} · ${euro(drink.price)}</span>
+      <button type="button" class="small danger" data-remove-drink="${index}">Löschen</button>
+    </div>
+  `).join("");
 
   document.querySelectorAll("[data-remove-drink]").forEach(btn => {
     btn.addEventListener("click", () => {
-      const sorted = data.drinks.slice().sort((a,b)=>a.name.localeCompare(b.name,"de"));
-      const drink = sorted[Number(btn.dataset.removeDrink)];
+      const drink = sortedDrinks[Number(btn.dataset.removeDrink)];
       if (confirm(`${drink.name} wirklich löschen?`)) {
         data.drinks = data.drinks.filter(d => !(d.name === drink.name && d.price === drink.price));
         saveData();
@@ -215,22 +287,22 @@ function renderReports() {
 }
 
 function refreshAll() {
-  renderMembers($("memberSearch").value);
   renderDrinks();
   renderRecent();
   renderAdmin();
-  $("selectedMember").textContent = selectedMember
-    ? `Ausgewählt: ${selectedMember}`
-    : "Noch kein Mitglied ausgewählt";
 }
 
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, ch => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
-  }[ch]));
-}
+$("memberLoginBtn").addEventListener("click", loginMember);
+$("memberCode").addEventListener("keydown", event => {
+  if (event.key === "Enter") loginMember();
+});
+$("logoutBtn").addEventListener("click", () => logoutMember(false));
 
-$("memberSearch").addEventListener("input", e => renderMembers(e.target.value));
+["pointerdown", "keydown", "touchstart"].forEach(eventName => {
+  document.addEventListener(eventName, () => {
+    if (activeMember) resetInactivityTimer();
+  }, { passive: true });
+});
 
 $("adminBtn").addEventListener("click", () => {
   $("pinArea").hidden = false;
@@ -251,13 +323,24 @@ $("pinSubmit").addEventListener("click", () => {
 
 $("addMemberBtn").addEventListener("click", () => {
   const name = $("newMemberName").value.trim();
-  if (!name) return;
-  if (data.members.some(m => m.toLowerCase() === name.toLowerCase())) {
+  const code = $("newMemberCode").value.trim();
+
+  if (!name || !/^\d{4}$/.test(code)) {
+    toast("Bitte Namen und einen 4-stelligen Code eingeben.");
+    return;
+  }
+  if (data.members.some(m => m.name.toLowerCase() === name.toLowerCase())) {
     toast("Mitglied existiert bereits.");
     return;
   }
-  data.members.push(name);
+  if (data.members.some(m => m.code === code)) {
+    toast("Dieser Code ist bereits vergeben.");
+    return;
+  }
+
+  data.members.push({ name, code });
   $("newMemberName").value = "";
+  $("newMemberCode").value = "";
   saveData();
   refreshAll();
 });
@@ -289,13 +372,14 @@ $("savePinBtn").addEventListener("click", () => {
 });
 
 $("exportBtn").addEventListener("click", () => {
-  const header = ["Datum", "Uhrzeit", "Mitglied", "Getränk", "Preis"];
+  const header = ["Datum", "Uhrzeit", "Mitglied", "Mitgliedscode", "Getränk", "Preis"];
   const lines = data.bookings.map(b => {
     const d = new Date(b.createdAt);
     return [
       d.toLocaleDateString("de-DE"),
       d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
       b.member,
+      b.memberCode || "",
       b.drink,
       Number(b.price).toFixed(2).replace(".", ",")
     ];
@@ -336,3 +420,4 @@ if ("serviceWorker" in navigator) {
 }
 
 refreshAll();
+$("memberCode").focus();

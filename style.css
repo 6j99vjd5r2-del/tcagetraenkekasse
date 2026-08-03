@@ -198,3 +198,40 @@ th { color: var(--muted); }
   .recent-row, .list-row { grid-template-columns: 1fr auto; }
   .recent-row .time { grid-column: 1 / -1; color: var(--muted); }
 }
+
+.code-login {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+.code-login input {
+  text-align: center;
+  font-size: 1.35rem;
+  letter-spacing: .35em;
+}
+.booking-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.member-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: #eef3f0;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+@media (max-width: 650px) {
+  .code-login { grid-template-columns: 1fr; }
+  .booking-head { align-items: flex-start; }
+}
+
+.session-info {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: .95rem;
+  font-weight: 600;
+}
+.session-info.warning {
+  color: var(--danger);
+}

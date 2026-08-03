@@ -19,15 +19,25 @@
   </header>
 
   <main>
-    <section class="card">
-      <h2>1. Mitglied auswählen</h2>
-      <input id="memberSearch" type="search" placeholder="Name suchen ..." autocomplete="off" />
-      <div id="memberGrid" class="grid members"></div>
+    <section class="card" id="loginCard">
+      <h2>1. Persönlichen Code eingeben</h2>
+      <p class="hint">Jedes Mitglied bucht ausschließlich auf den eigenen Namen.</p>
+      <div class="code-login">
+        <input id="memberCode" type="password" inputmode="numeric" maxlength="4"
+               autocomplete="off" placeholder="4-stelliger Code" />
+        <button id="memberLoginBtn" type="button">Anmelden</button>
+      </div>
     </section>
 
-    <section class="card">
-      <h2>2. Getränk buchen</h2>
-      <div id="selectedMember" class="selected">Noch kein Mitglied ausgewählt</div>
+    <section class="card" id="bookingCard" hidden>
+      <div class="booking-head">
+        <div>
+          <h2>2. Getränke buchen</h2>
+          <div id="selectedMember" class="selected"></div>
+          <div id="sessionInfo" class="session-info">Automatische Abmeldung in 10 Sekunden</div>
+        </div>
+        <button id="logoutBtn" type="button" class="ghost">Abmelden</button>
+      </div>
       <div id="drinkGrid" class="grid drinks"></div>
     </section>
 
@@ -62,8 +72,9 @@
         </div>
 
         <section id="tab-members" class="tab-panel">
-          <div class="inline-form">
+          <div class="inline-form three">
             <input id="newMemberName" placeholder="Neues Mitglied" />
+            <input id="newMemberCode" type="password" inputmode="numeric" maxlength="4" placeholder="4-stelliger Code" />
             <button type="button" id="addMemberBtn">Hinzufügen</button>
           </div>
           <div id="adminMembers"></div>

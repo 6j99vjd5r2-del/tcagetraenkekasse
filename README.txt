@@ -1,38 +1,32 @@
-GETRÄNKEKASSE 2.0 – KURZANLEITUNG
+GETRÄNKEKASSE 2.2 – MEHRFACHBUCHUNG & AUTO-ABMELDUNG
 
-Funktionen
-- Mitglied auswählen
-- Getränk per großer Schaltfläche buchen
-- Lokale Speicherung auf dem Gerät
-- Letzte Buchungen anzeigen
-- Mitglieder und Getränke verwalten
-- Summen je Mitglied
-- CSV-Export
-- Admin-PIN
-- Offline-Nutzung nach Installation
+Neue Bedienung
+1. Mitglied gibt den persönlichen 4-stelligen Code ein.
+2. Die App zeigt ausschließlich den zugehörigen Namen.
+3. Das Mitglied kann mehrere Getränke nacheinander buchen.
+4. Jede Buchung setzt den Inaktivitäts-Timer wieder auf 10 Sekunden zurück.
+5. Erfolgt 10 Sekunden lang keine Eingabe, wird das Mitglied automatisch abgemeldet.
+6. Ein sichtbarer Countdown zeigt die verbleibende Zeit.
+7. Eine manuelle Abmeldung bleibt jederzeit möglich.
 
-Standard-PIN
-2468
+Administration
+- Standard-Admin-PIN: 2468
+- Mitglieder werden mit Name und eindeutigem 4-stelligem Code angelegt.
+- Codes dürfen nicht doppelt vergeben werden.
+- CSV-Export enthält den Mitgliedscode.
 
-Empfohlene Installation auf dem iPad
-1. Den kompletten Ordner auf einen HTTPS-Webspace laden, z. B. GitHub Pages, Cloudflare Pages oder einen Vereins-Webserver.
-2. Die Seite einmal in Safari öffnen.
-3. In Safari auf „Teilen“ tippen.
-4. „Zum Home-Bildschirm“ wählen.
-5. Die App einmal starten, solange Internet verfügbar ist.
-6. Danach funktioniert sie offline.
+Update auf GitHub Pages
+1. Inhalt dieser ZIP-Datei entpacken.
+2. Im bestehenden GitHub-Repository alle vorhandenen Dateien durch die neuen ersetzen.
+3. Änderungen mit „Commit changes“ speichern.
+4. GitHub Pages aktualisiert dieselbe Webadresse automatisch.
+5. Auf dem iPad die Seite einmal online öffnen und neu laden.
+6. Falls weiterhin die alte Version erscheint:
+   - App vom Home-Bildschirm entfernen,
+   - Safari-Websitedaten nur für die GitHub-Pages-Seite löschen,
+   - Seite neu öffnen,
+   - erneut „Zum Home-Bildschirm“ hinzufügen.
 
-Wichtig
-- Die Buchungsdaten liegen ausschließlich im Browser-Speicher dieses iPads.
-- Werden Safari-Websitedaten gelöscht oder das Gerät zurückgesetzt, gehen die Daten verloren.
-- Deshalb regelmäßig im Adminbereich eine CSV exportieren.
-- Für einen echten Kiosk-Betrieb am iPad zusätzlich „Geführter Zugriff“ aktivieren.
-
-Dateien
-- index.html
-- style.css
-- app.js
-- manifest.json
-- sw.js
-- icon-192.png
-- icon-512.png
+Datensicherung
+Die Buchungsdaten bleiben lokal auf dem iPad gespeichert.
+Regelmäßig im Adminbereich als CSV exportieren.
