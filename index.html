@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#173f2f" />
-  <title>Getränkekasse 2.0</title>
+  <title>Getränkekasse 3.0</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <link rel="stylesheet" href="style.css" />
@@ -12,7 +12,7 @@
 <body>
   <header>
     <div>
-      <h1>Getränkekasse 2.0</h1>
+      <h1>Getränkekasse 3.0</h1>
       <p>Offline-Buchung für den Verein</p>
     </div>
     <button id="adminBtn" class="secondary">Admin</button>
@@ -20,7 +20,7 @@
 
   <main>
     <section class="card" id="loginCard">
-      <h2>1. Persönlichen Code eingeben</h2>
+      <h2>Persönlichen Code eingeben</h2>
       <p class="hint">Jedes Mitglied bucht ausschließlich auf den eigenen Namen.</p>
       <div class="code-login">
         <input id="memberCode" type="password" inputmode="numeric" maxlength="4"
@@ -32,7 +32,7 @@
     <section class="card" id="bookingCard" hidden>
       <div class="booking-head">
         <div>
-          <h2>2. Getränke buchen</h2>
+          <h2>Getränke buchen</h2>
           <div id="selectedMember" class="selected"></div>
           <div id="sessionInfo" class="session-info">Automatische Abmeldung in 10 Sekunden</div>
         </div>
@@ -67,32 +67,65 @@
         <div class="tabs">
           <button type="button" data-tab="members" class="tab active">Mitglieder</button>
           <button type="button" data-tab="drinks" class="tab">Getränke</button>
-          <button type="button" data-tab="reports" class="tab">Auswertung</button>
+          <button type="button" data-tab="reports" class="tab">Monatsabschluss</button>
           <button type="button" data-tab="settings" class="tab">Einstellungen</button>
         </div>
 
         <section id="tab-members" class="tab-panel">
-          <div class="inline-form three">
-            <input id="newMemberName" placeholder="Neues Mitglied" />
-            <input id="newMemberCode" type="password" inputmode="numeric" maxlength="4" placeholder="4-stelliger Code" />
-            <button type="button" id="addMemberBtn">Hinzufügen</button>
+          <div class="admin-section">
+            <h3>Mitgliederliste importieren</h3>
+            <p class="hint">CSV mit Spalten: Mitglieder-ID, Name, Code, Aktiv. Trennzeichen Komma oder Semikolon.</p>
+            <div class="file-actions">
+              <input id="memberCsvFile" type="file" accept=".csv,text/csv" />
+              <button type="button" id="importMembersBtn">CSV importieren</button>
+              <button type="button" id="memberTemplateBtn" class="ghost">CSV-Vorlage</button>
+            </div>
           </div>
+
+          <div class="admin-section">
+            <h3>Mitglied hinzufügen</h3>
+            <div class="inline-form four">
+              <input id="newMemberId" placeholder="Mitglieder-ID" />
+              <input id="newMemberName" placeholder="Name" />
+              <input id="newMemberCode" type="password" inputmode="numeric" maxlength="4" placeholder="4-stelliger Code" />
+              <button type="button" id="addMemberBtn">Hinzufügen</button>
+            </div>
+          </div>
+
           <div id="adminMembers"></div>
         </section>
 
         <section id="tab-drinks" class="tab-panel" hidden>
-          <div class="inline-form three">
-            <input id="newDrinkName" placeholder="Getränk" />
-            <input id="newDrinkPrice" type="number" min="0" step="0.10" placeholder="Preis €" />
-            <button type="button" id="addDrinkBtn">Hinzufügen</button>
+          <div class="admin-section">
+            <h3>Getränkeliste importieren</h3>
+            <p class="hint">CSV mit Spalten: Getränk, Preis, Aktiv. Trennzeichen Komma oder Semikolon.</p>
+            <div class="file-actions">
+              <input id="drinkCsvFile" type="file" accept=".csv,text/csv" />
+              <button type="button" id="importDrinksBtn">CSV importieren</button>
+              <button type="button" id="drinkTemplateBtn" class="ghost">CSV-Vorlage</button>
+            </div>
           </div>
+
+          <div class="admin-section">
+            <h3>Getränk hinzufügen</h3>
+            <div class="inline-form three">
+              <input id="newDrinkName" placeholder="Getränk" />
+              <input id="newDrinkPrice" type="number" min="0" step="0.10" placeholder="Preis €" />
+              <button type="button" id="addDrinkBtn">Hinzufügen</button>
+            </div>
+          </div>
+
           <div id="adminDrinks"></div>
         </section>
 
         <section id="tab-reports" class="tab-panel" hidden>
-          <div class="report-actions">
-            <button type="button" id="exportBtn">CSV exportieren</button>
-            <button type="button" id="clearBookingsBtn" class="danger">Alle Buchungen löschen</button>
+          <div class="report-toolbar">
+            <label>Monat
+              <input id="reportMonth" type="month" />
+            </label>
+            <button type="button" id="exportExcelBtn">Excel-Monatsabschluss</button>
+            <button type="button" id="exportCsvBtn" class="ghost">CSV exportieren</button>
+            <button type="button" id="clearMonthBtn" class="danger">Monat löschen</button>
           </div>
           <div id="summary"></div>
           <div id="bookingTable"></div>
@@ -103,6 +136,15 @@
           <div class="inline-form">
             <input id="newPin" type="password" inputmode="numeric" maxlength="8" placeholder="Neue PIN" />
             <button type="button" id="savePinBtn">PIN speichern</button>
+          </div>
+
+          <div class="admin-section">
+            <h3>Datensicherung</h3>
+            <div class="file-actions">
+              <button type="button" id="backupBtn">Komplettsicherung exportieren</button>
+              <input id="restoreFile" type="file" accept=".json,application/json" />
+              <button type="button" id="restoreBtn" class="ghost">Sicherung einspielen</button>
+            </div>
           </div>
           <p class="hint">Die Daten werden ausschließlich auf diesem Gerät gespeichert.</p>
         </section>
