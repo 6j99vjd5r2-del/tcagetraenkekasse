@@ -119,47 +119,101 @@ function stopInactivityTimer() {
 }
 function updateSessionInfo() {
   const el = $("sessionInfo"); if (!el) return;
-  el.textContent = `Automatische Abmeldung in ${inactivitySecondsLeft} Sekunde${inactivitySecondsLeft===1?"":"n"}`;
-  el.classList.toggle("warning", inactivitySecondsLeft <= 3);
+  el.textContent = `${inactivitySecondsLeft} Sekunde${inactivitySecondsLeft===1?"":"n"}`;
+  
 }
 function loginMember() {
   const code = $("memberCode").value.trim();
   if (!/^\d{4}$/.test(code)) return toast("Bitte einen 4-stelligen Code eingeben.");
   const member = data.members.find(m => m.code === code && m.active);
-  if (!member) { $("memberCode").value=""; return toast("Code nicht gefunden oder Mitglied inaktiv."); }
+  if (!member) {
+    $("memberCode").value = "";
+    return toast("Code nicht gefunden oder Mitglied inaktiv.");
+  }
   activeMember = member;
-  $("memberCode").value=""; $("loginCard").hidden=true; $("bookingCard").hidden=false;
-  $("selectedMember").textContent=`Angemeldet: ${member.name}`;
-  renderDrinks(); startInactivityTimer();
+  $("memberCode").value = "";
+  $("loginPanel").hidden = true;
+  $("memberPanel").hidden = false;
+  $("bookingPanel").hidden = false;
+  $("memberName").textContent = member.name;
+  $("memberId").textContent = member.id;
+  $("welcomeText").textContent = `Willkommen ${member.name}!`;
+  renderDrinks();
+  renderRecent();
+  updateMemberMonthTotal();
+  startInactivityTimer();
 }
 function logoutMember(auto=false) {
-  stopInactivityTimer(); activeMember=null; $("bookingCard").hidden=true; $("loginCard").hidden=false;
-  $("memberCode").value=""; $("memberCode").focus(); if(auto) toast("Automatisch abgemeldet.");
+  stopInactivityTimer();
+  activeMember = null;
+  $("memberPanel").hidden = true;
+  $("bookingPanel").hidden = true;
+  $("loginPanel").hidden = false;
+  $("memberCode").value = "";
+  $("memberCode").focus();
+  if (auto) toast("Automatisch abgemeldet.");
+}
+
+function drinkEmoji(name) {
+  const n = String(name).toLowerCase();
+  if (n.includes("wasser")) return "💧";
+  if (n.includes("spezi") || n.includes("cola")) return "🥤";
+  if (n.includes("bier") || n.includes("helles") || n.includes("radler")) return "🍺";
+  if (n.includes("wein")) return "🍷";
+  if (n.includes("kaffee")) return "☕";
+  if (n.includes("tee")) return "🍵";
+  if (n.includes("apfel")) return "🍏";
+  if (n.includes("limo") || n.includes("zitr")) return "🍋";
+  return "🥤";
 }
 
 function renderDrinks() {
+  if (!activeMember) {
+    $("drinkGrid").innerHTML = "";
+    return;
+  }
   const drinks = data.drinks.filter(d=>d.active).sort((a,b)=>a.name.localeCompare(b.name,"de"));
   $("drinkGrid").innerHTML = drinks.map(d=>`
-    <button class="tile drink-tile" data-drink="${escapeHtml(d.id)}">
-      ${escapeHtml(d.name)}<span>${euro(d.price)}</span>
+    <button class="drink-card" data-drink="${escapeHtml(d.id)}" type="button">
+      <span class="drink-emoji">${drinkEmoji(d.name)}</span>
+      <span><span class="drink-name">${escapeHtml(d.name)}</span><span class="drink-price">${euro(d.price)}</span></span>
+      <span class="plus-badge">+</span>
     </button>`).join("") || `<p class="hint">Keine aktiven Getränke vorhanden.</p>`;
   document.querySelectorAll("[data-drink]").forEach(btn=>btn.addEventListener("click",()=>{
     if(!activeMember) return toast("Bitte zuerst anmelden.");
     const drink=data.drinks.find(d=>d.id===btn.dataset.drink);
-    data.bookings.push({
-      id:uid("B"), memberId:activeMember.id, member:activeMember.name, memberCode:activeMember.code,
-      drinkId:drink.id, drink:drink.name, price:Number(drink.price), createdAt:new Date().toISOString()
-    });
-    saveData(); renderRecent(); renderReports(); toast(`${drink.name} für ${activeMember.name} gebucht`); resetInactivityTimer();
+    data.bookings.push({id:uid("B"),memberId:activeMember.id,member:activeMember.name,memberCode:activeMember.code,drinkId:drink.id,drink:drink.name,price:Number(drink.price),createdAt:new Date().toISOString()});
+    saveData();
+    renderRecent();
+    renderReports();
+    updateMemberMonthTotal();
+    toast(`${drink.name} gebucht`);
+    resetInactivityTimer();
   }));
 }
 function renderRecent() {
-  const recent=[...data.bookings].reverse().slice(0,8);
-  $("recentBookings").innerHTML=recent.length?recent.map(b=>`
-    <div class="recent-row">
-      <strong>${escapeHtml(b.member)} · ${escapeHtml(b.drink)}</strong>
-      <span>${euro(b.price)}</span><span class="time">${dateTime(b.createdAt)}</span>
-    </div>`).join(""):`<p class="hint">Noch keine Buchungen vorhanden.</p>`;
+  if (!activeMember) {
+    $("recentBookings").innerHTML = "";
+    return;
+  }
+  const recent = data.bookings
+    .filter(b => (b.memberId && b.memberId === activeMember.id) || (!b.memberId && b.member === activeMember.name))
+    .slice().reverse().slice(0,5);
+  $("recentBookings").innerHTML = recent.length ? `
+    <table class="recent-table">
+      <thead><tr><th>Datum / Uhrzeit</th><th>Getränk</th><th>Preis</th></tr></thead>
+      <tbody>${recent.map(b=>`<tr><td>${dateTime(b.createdAt)}</td><td>${escapeHtml(b.drink)}</td><td>${euro(b.price)}</td></tr>`).join("")}</tbody>
+    </table>` : `<p class="hint" style="padding:16px">Noch keine Buchungen vorhanden.</p>`;
+}
+
+function updateMemberMonthTotal() {
+  if (!activeMember) return;
+  const month = currentMonthValue();
+  const total = data.bookings
+    .filter(b => b.createdAt.slice(0,7) === month)
+    .filter(b => (b.memberId && b.memberId === activeMember.id) || (!b.memberId && b.member === activeMember.name))
+    .reduce((sum,b) => sum + Number(b.price), 0);
+  $("memberMonthTotal").textContent = euro(total);
 }
 
 function renderAdmin() {
@@ -474,6 +528,6 @@ document.querySelectorAll(".tab").forEach(btn=>btn.addEventListener("click",()=>
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));btn.classList.add("active");
   document.querySelectorAll(".tab-panel").forEach(p=>p.hidden=true);$(`tab-${btn.dataset.tab}`).hidden=false;
 }));
-function refreshAll(){renderDrinks();renderRecent();renderAdmin();}
+function refreshAll(){renderDrinks();renderRecent();renderAdmin();if(activeMember)updateMemberMonthTotal();}
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(console.error));
 $("reportMonth").value=currentMonthValue();refreshAll();$("memberCode").focus();

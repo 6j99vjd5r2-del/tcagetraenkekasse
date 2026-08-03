@@ -1,157 +1,83 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#173f2f" />
-  <title>Getränkekasse 3.0</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff"><title>Getränkekasse 4.0</title>
+<link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png"><link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <div>
-      <h1>Getränkekasse 3.0</h1>
-      <p>Offline-Buchung für den Verein</p>
+<header class="app-header">
+  <img src="tc-aldersbach-logo.jpeg" alt="Logo TC Aldersbach" class="club-logo">
+  <div class="brand-title"><h1>GETRÄNKEKASSE 4.0</h1><p>TC Aldersbach</p></div>
+  <button id="adminBtn" class="admin-button" type="button">⚙ <span>Admin</span></button>
+</header>
+<div class="yellow-line"></div>
+
+<main class="app-shell">
+  <aside id="loginPanel" class="side-panel card">
+    <div class="member-avatar">👤</div>
+    <h2>Mitglied anmelden</h2>
+    <p>Bitte deinen 4-stelligen Code eingeben</p>
+    <input id="memberCode" class="code-input" type="password" inputmode="numeric" maxlength="4" autocomplete="off">
+    <button id="memberLoginBtn" class="primary-action" type="button">Anmelden <span>›</span></button>
+  </aside>
+
+  <aside id="memberPanel" class="side-panel card" hidden>
+    <div class="member-avatar">👤</div>
+    <div class="member-label">Angemeldet:</div>
+    <h2 id="memberName"></h2>
+    <p class="member-id-line">Mitglied: <strong id="memberId"></strong></p>
+    <div class="ready-box">🥤 <span>Bereit für Getränkebuchungen</span></div>
+    <div class="current-total"><span>Aktueller Monatsbetrag</span><strong id="memberMonthTotal">0,00 €</strong></div>
+    <button id="logoutBtn" class="logout-button" type="button">↪ Abmelden</button>
+  </aside>
+
+  <section id="bookingPanel" class="content-panel card" hidden>
+    <div class="welcome-banner">
+      <div><strong id="welcomeText">Willkommen!</strong><span>Bitte Getränk auswählen.</span></div>
+      <div class="timer-block">⏱ <span>Automatische Abmeldung in<br><strong id="sessionInfo">10 Sekunden</strong></span></div>
     </div>
-    <button id="adminBtn" class="secondary">Admin</button>
-  </header>
-
-  <main>
-    <section class="card" id="loginCard">
-      <h2>Persönlichen Code eingeben</h2>
-      <p class="hint">Jedes Mitglied bucht ausschließlich auf den eigenen Namen.</p>
-      <div class="code-login">
-        <input id="memberCode" type="password" inputmode="numeric" maxlength="4"
-               autocomplete="off" placeholder="4-stelliger Code" />
-        <button id="memberLoginBtn" type="button">Anmelden</button>
-      </div>
+    <div class="section-title"><span>🥤</span><h2>Getränke auswählen</h2></div>
+    <div id="drinkGrid" class="drink-grid"></div>
+    <section id="recentSection" class="recent-section">
+      <div class="section-title"><span>↶</span><h2>Letzte Buchungen</h2></div>
+      <div id="recentBookings" class="recent-table-wrap"></div>
     </section>
+  </section>
+</main>
 
-    <section class="card" id="bookingCard" hidden>
-      <div class="booking-head">
-        <div>
-          <h2>Getränke buchen</h2>
-          <div id="selectedMember" class="selected"></div>
-          <div id="sessionInfo" class="session-info">Automatische Abmeldung in 10 Sekunden</div>
-        </div>
-        <button id="logoutBtn" type="button" class="ghost">Abmelden</button>
-      </div>
-      <div id="drinkGrid" class="grid drinks"></div>
-    </section>
+<footer class="app-footer"><div>© 2026 TC Aldersbach</div><div><span class="status-dot"></span>Offline-Modus aktiv</div><div>Version 4.0</div></footer>
+<div id="toast" class="toast" aria-live="polite"></div>
 
-    <section class="card">
-      <h2>Letzte Buchungen</h2>
-      <div id="recentBookings" class="recent"></div>
-    </section>
-  </main>
-
-  <div id="toast" class="toast" aria-live="polite"></div>
-
-  <dialog id="adminDialog">
-    <form method="dialog" class="dialog-card">
-      <div class="dialog-head">
-        <h2>Administration</h2>
-        <button value="cancel" class="icon-btn" aria-label="Schließen">×</button>
-      </div>
-
-      <div id="pinArea">
-        <label for="pinInput">Admin-PIN</label>
-        <input id="pinInput" type="password" inputmode="numeric" maxlength="8" placeholder="PIN eingeben" />
-        <button type="button" id="pinSubmit">Anmelden</button>
-        <p class="hint">Standard-PIN: 2468</p>
-      </div>
-
-      <div id="adminArea" hidden>
-        <div class="tabs">
-          <button type="button" data-tab="members" class="tab active">Mitglieder</button>
-          <button type="button" data-tab="drinks" class="tab">Getränke</button>
-          <button type="button" data-tab="reports" class="tab">Monatsabschluss</button>
-          <button type="button" data-tab="settings" class="tab">Einstellungen</button>
-        </div>
-
-        <section id="tab-members" class="tab-panel">
-          <div class="admin-section">
-            <h3>Mitgliederliste importieren</h3>
-            <p class="hint">CSV mit Spalten: Mitglieder-ID, Name, Code, Aktiv. Trennzeichen Komma oder Semikolon.</p>
-            <div class="file-actions">
-              <input id="memberCsvFile" type="file" accept=".csv,text/csv" />
-              <button type="button" id="importMembersBtn">CSV importieren</button>
-              <button type="button" id="memberTemplateBtn" class="ghost">CSV-Vorlage</button>
-            </div>
-          </div>
-
-          <div class="admin-section">
-            <h3>Mitglied hinzufügen</h3>
-            <div class="inline-form four">
-              <input id="newMemberId" placeholder="Mitglieder-ID" />
-              <input id="newMemberName" placeholder="Name" />
-              <input id="newMemberCode" type="password" inputmode="numeric" maxlength="4" placeholder="4-stelliger Code" />
-              <button type="button" id="addMemberBtn">Hinzufügen</button>
-            </div>
-          </div>
-
-          <div id="adminMembers"></div>
-        </section>
-
-        <section id="tab-drinks" class="tab-panel" hidden>
-          <div class="admin-section">
-            <h3>Getränkeliste importieren</h3>
-            <p class="hint">CSV mit Spalten: Getränk, Preis, Aktiv. Trennzeichen Komma oder Semikolon.</p>
-            <div class="file-actions">
-              <input id="drinkCsvFile" type="file" accept=".csv,text/csv" />
-              <button type="button" id="importDrinksBtn">CSV importieren</button>
-              <button type="button" id="drinkTemplateBtn" class="ghost">CSV-Vorlage</button>
-            </div>
-          </div>
-
-          <div class="admin-section">
-            <h3>Getränk hinzufügen</h3>
-            <div class="inline-form three">
-              <input id="newDrinkName" placeholder="Getränk" />
-              <input id="newDrinkPrice" type="number" min="0" step="0.10" placeholder="Preis €" />
-              <button type="button" id="addDrinkBtn">Hinzufügen</button>
-            </div>
-          </div>
-
-          <div id="adminDrinks"></div>
-        </section>
-
-        <section id="tab-reports" class="tab-panel" hidden>
-          <div class="report-toolbar">
-            <label>Monat
-              <input id="reportMonth" type="month" />
-            </label>
-            <button type="button" id="exportExcelBtn">Excel-Monatsabschluss</button>
-            <button type="button" id="exportCsvBtn" class="ghost">CSV exportieren</button>
-            <button type="button" id="clearMonthBtn" class="danger">Monat löschen</button>
-          </div>
-          <div id="summary"></div>
-          <div id="bookingTable"></div>
-        </section>
-
-        <section id="tab-settings" class="tab-panel" hidden>
-          <label for="newPin">Neue Admin-PIN</label>
-          <div class="inline-form">
-            <input id="newPin" type="password" inputmode="numeric" maxlength="8" placeholder="Neue PIN" />
-            <button type="button" id="savePinBtn">PIN speichern</button>
-          </div>
-
-          <div class="admin-section">
-            <h3>Datensicherung</h3>
-            <div class="file-actions">
-              <button type="button" id="backupBtn">Komplettsicherung exportieren</button>
-              <input id="restoreFile" type="file" accept=".json,application/json" />
-              <button type="button" id="restoreBtn" class="ghost">Sicherung einspielen</button>
-            </div>
-          </div>
-          <p class="hint">Die Daten werden ausschließlich auf diesem Gerät gespeichert.</p>
-        </section>
-      </div>
-    </form>
-  </dialog>
-
-  <script src="app.js"></script>
-</body>
-</html>
+<dialog id="adminDialog">
+<form method="dialog" class="dialog-card">
+<div class="dialog-head"><h2>Administration</h2><button value="cancel" class="icon-btn">×</button></div>
+<div id="pinArea"><label for="pinInput">Admin-PIN</label><input id="pinInput" type="password" inputmode="numeric" maxlength="8" placeholder="PIN eingeben"><button type="button" id="pinSubmit">Anmelden</button><p class="hint">Standard-PIN: 2468</p></div>
+<div id="adminArea" hidden>
+<div class="tabs">
+<button type="button" data-tab="members" class="tab active">Mitglieder</button>
+<button type="button" data-tab="drinks" class="tab">Getränke</button>
+<button type="button" data-tab="reports" class="tab">Monatsabschluss</button>
+<button type="button" data-tab="settings" class="tab">Einstellungen</button>
+</div>
+<section id="tab-members" class="tab-panel">
+<div class="admin-section"><h3>Mitgliederliste importieren</h3><p class="hint">CSV: Mitglieder-ID, Name, Code, Aktiv</p><div class="file-actions"><input id="memberCsvFile" type="file" accept=".csv,text/csv"><button type="button" id="importMembersBtn">CSV importieren</button><button type="button" id="memberTemplateBtn" class="ghost">CSV-Vorlage</button></div></div>
+<div class="admin-section"><h3>Mitglied hinzufügen</h3><div class="inline-form four"><input id="newMemberId" placeholder="Mitglieder-ID"><input id="newMemberName" placeholder="Name"><input id="newMemberCode" type="password" inputmode="numeric" maxlength="4" placeholder="4-stelliger Code"><button type="button" id="addMemberBtn">Hinzufügen</button></div></div>
+<div id="adminMembers"></div>
+</section>
+<section id="tab-drinks" class="tab-panel" hidden>
+<div class="admin-section"><h3>Getränkeliste importieren</h3><p class="hint">CSV: Getränk, Preis, Aktiv</p><div class="file-actions"><input id="drinkCsvFile" type="file" accept=".csv,text/csv"><button type="button" id="importDrinksBtn">CSV importieren</button><button type="button" id="drinkTemplateBtn" class="ghost">CSV-Vorlage</button></div></div>
+<div class="admin-section"><h3>Getränk hinzufügen</h3><div class="inline-form three"><input id="newDrinkName" placeholder="Getränk"><input id="newDrinkPrice" type="number" min="0" step="0.10" placeholder="Preis €"><button type="button" id="addDrinkBtn">Hinzufügen</button></div></div>
+<div id="adminDrinks"></div>
+</section>
+<section id="tab-reports" class="tab-panel" hidden>
+<div class="report-toolbar"><label>Monat<input id="reportMonth" type="month"></label><button type="button" id="exportExcelBtn">Excel-Monatsabschluss</button><button type="button" id="exportCsvBtn" class="ghost">CSV exportieren</button><button type="button" id="clearMonthBtn" class="danger">Monat löschen</button></div><div id="summary"></div><div id="bookingTable"></div>
+</section>
+<section id="tab-settings" class="tab-panel" hidden>
+<label for="newPin">Neue Admin-PIN</label><div class="inline-form"><input id="newPin" type="password" inputmode="numeric" maxlength="8" placeholder="Neue PIN"><button type="button" id="savePinBtn">PIN speichern</button></div>
+<div class="admin-section"><h3>Datensicherung</h3><div class="file-actions"><button type="button" id="backupBtn">Komplettsicherung exportieren</button><input id="restoreFile" type="file" accept=".json,application/json"><button type="button" id="restoreBtn" class="ghost">Sicherung einspielen</button></div></div>
+<p class="hint">Die Daten werden ausschließlich auf diesem Gerät gespeichert.</p>
+</section>
+</div></form></dialog>
+<script src="app.js"></script>
+</body></html>
