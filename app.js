@@ -234,7 +234,7 @@ function renderDrinks() {
     $("drinkGrid").innerHTML = "";
     return;
   }
-  const drinks = data.drinks.filter(d=>d.active).sort((a,b)=>a.name.localeCompare(b.name,"de"));
+  const drinks = data.drinks.filter(d=>d.active);
   $("drinkGrid").innerHTML = drinks.map(d=>`
     <button class="drink-card" data-drink="${escapeHtml(d.id)}" type="button">
       <span class="drink-emoji">${drinkEmoji(d.name)}</span>
