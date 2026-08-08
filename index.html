@@ -2,13 +2,13 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#ffffff"><title>Getränkekasse 5.0</title>
+<meta name="theme-color" content="#ffffff"><title>Getränkekasse 5.0.1</title>
 <link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png"><link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="app-header">
   <img src="tc-aldersbach-logo.jpeg" alt="Logo TC Aldersbach" class="club-logo">
-  <div class="brand-title"><h1>GETRÄNKEKASSE 5.0</h1><p>TC Aldersbach</p></div>
+  <div class="brand-title"><h1>GETRÄNKEKASSE 5.0.1</h1><p>TC Aldersbach</p></div>
   <button id="adminBtn" class="admin-button" type="button">⚙ <span>Admin</span></button>
 </header>
 <div class="yellow-line"></div>
@@ -35,23 +35,20 @@
   <section id="bookingPanel" class="content-panel card" hidden>
     <div class="welcome-banner">
       <div><strong id="welcomeText">Willkommen!</strong><span>Bitte Getränk auswählen.</span></div>
-      <div class="timer-block">⏱ <span>Automatische Abmeldung in<br><strong id="sessionInfo">20 Sekunden</strong></span></div>
+      <div class="timer-block">⏱ <span>Automatische Abmeldung in<br><strong id="sessionInfo">30 Sekunden</strong></span></div>
     </div>
     <div class="section-title"><span>🥤</span><h2>Getränke auswählen</h2></div>
     <div id="drinkGrid" class="drink-grid"></div>
     <section id="recentSection" class="recent-section">
       <div class="recent-heading">
         <div class="section-title"><span>↶</span><h2>Letzte Buchungen</h2></div>
-        <button id="deleteLastSessionBookingBtn" class="session-delete-button" type="button" disabled>
-          Letzte Sitzungsbuchung löschen
-        </button>
       </div>
       <div id="recentBookings" class="recent-table-wrap"></div>
     </section>
   </section>
 </main>
 
-<footer class="app-footer"><div>© 2026 TC Aldersbach</div><div><span class="status-dot"></span>Offline-Modus aktiv</div><div>Version 5.0</div></footer>
+<footer class="app-footer"><div>© 2026 TC Aldersbach</div><div><span class="status-dot"></span>Offline-Modus aktiv</div><div>Version 5.0.1</div></footer>
 <div id="toast" class="toast" aria-live="polite"></div>
 
 <dialog id="adminDialog">
