@@ -10,11 +10,27 @@ const defaultData = {
     { id: "M1004", name: "Lisa Beispiel", code: "1004", active: true }
   ],
   drinks: [
-    { id: "D1", name: "Wasser", price: 1.50, active: true },
-    { id: "D2", name: "Spezi", price: 2.00, active: true },
-    { id: "D3", name: "Apfelschorle", price: 2.00, active: true },
-    { id: "D4", name: "Bier", price: 2.50, active: true },
-    { id: "D5", name: "Kaffee", price: 1.50, active: true }
+    { id: "D1", name: "Helles", price: 2.00, active: true },
+    { id: "D2", name: "Helles alkoholfrei", price: 2.00, active: true },
+    { id: "D3", name: "Weizen", price: 2.10, active: true },
+    { id: "D4", name: "Radler", price: 2.10, active: true },
+    { id: "D5", name: "Pils", price: 1.60, active: true },
+    { id: "D6", name: "Spezi", price: 1.60, active: true },
+    { id: "D7", name: "Isosport", price: 1.60, active: true },
+    { id: "D8", name: "Wasser", price: 1.30, active: true },
+    { id: "D9", name: "Limo", price: 1.30, active: true },
+    { id: "D10", name: "Apfelschorle", price: 1.80, active: true },
+    { id: "D11", name: "Apfelkisch", price: 1.80, active: true },
+    { id: "D12", name: "ACE", price: 1.80, active: true },
+    { id: "D13", name: "Aperol Spritz", price: 4.50, active: true },
+    { id: "D14", name: "Maracuja Spritz", price: 4.50, active: true },
+    { id: "D15", name: "Lillet", price: 4.50, active: true },
+    { id: "D16", name: "Weinschorle", price: 2.00, active: true },
+    { id: "D17", name: "Wein (Flasche)", price: 9.00, active: true },
+    { id: "D18", name: "Eis Capri", price: 1.80, active: true },
+    { id: "D19", name: "Eis Magnum", price: 2.00, active: true },
+    { id: "D20", name: "Kuchen", price: 2.00, active: true },
+    { id: "D21", name: "Kaffee", price: 2.00, active: true }
   ],
   bookings: [],
   adminPin: "2468"
@@ -66,11 +82,25 @@ function loadData() {
     });
 
     loaded.adminPin = loaded.adminPin || "2468";
-    return loaded;
+    return migrateDrinkCatalogIfNeeded(loaded);
   } catch (error) {
     console.error(error);
     return structuredClone(defaultData);
   }
+}
+
+function migrateDrinkCatalogIfNeeded(loaded) {
+  const migrationKey = "getraenkekasse_drink_catalog_5_1";
+  if (localStorage.getItem(migrationKey) === "done") return loaded;
+  const oldExampleNames = new Set(["Wasser","Spezi","Apfelschorle","Bier","Kaffee"]);
+  const currentNames = (loaded.drinks || []).map(d => String(d.name || "").trim());
+  const oldExamples = currentNames.length > 0 && currentNames.length <= 5 &&
+    currentNames.every(name => oldExampleNames.has(name));
+  if (!localStorage.getItem(STORAGE_KEY) || oldExamples) {
+    loaded.drinks = structuredClone(defaultData.drinks);
+  }
+  localStorage.setItem(migrationKey, "done");
+  return loaded;
 }
 
 function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
@@ -180,14 +210,22 @@ function logoutMember(auto=false) {
 
 function drinkEmoji(name) {
   const n = String(name).toLowerCase();
-  if (n.includes("wasser")) return "💧";
-  if (n.includes("spezi") || n.includes("cola")) return "🥤";
-  if (n.includes("bier") || n.includes("helles") || n.includes("radler")) return "🍺";
-  if (n.includes("wein")) return "🍷";
+  if (n.includes("eis capri")) return "🍦";
+  if (n.includes("eis magnum")) return "🍨";
+  if (n.includes("kuchen")) return "🍰";
   if (n.includes("kaffee")) return "☕";
-  if (n.includes("tee")) return "🍵";
-  if (n.includes("apfel")) return "🍏";
-  if (n.includes("limo") || n.includes("zitr")) return "🍋";
+  if (n.includes("aperol") || n.includes("maracuja spritz")) return "🍹";
+  if (n.includes("lillet")) return "🍸";
+  if (n.includes("weinschorle")) return "🍷";
+  if (n.includes("wein")) return "🍾";
+  if (n.includes("weizen") || n.includes("radler") || n.includes("pils") || n.includes("helles")) return "🍺";
+  if (n.includes("spezi")) return "🥤";
+  if (n.includes("isosport")) return "⚡";
+  if (n.includes("wasser")) return "💧";
+  if (n.includes("limo")) return "🍋";
+  if (n.includes("apfelschorle")) return "🍏";
+  if (n.includes("apfelkisch")) return "🍎";
+  if (n.includes("ace")) return "🍊";
   return "🥤";
 }
 
